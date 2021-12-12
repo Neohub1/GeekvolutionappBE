@@ -5,57 +5,51 @@ import {
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
-  response,
-  HttpErrors,
+  del, get,
+  getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
+  response
 } from '@loopback/rest';
+import {Llaves} from '../config/llaves';
 import {Credenciales, Persona} from '../models';
 import {PersonaRepository} from '../repositories';
 import {AutenticacionService} from '../services';
 const fetch = require("node-fetch");
-import {Llaves} from '../config/llaves';
+
 
 export class PersonaController {
   constructor(
     @repository(PersonaRepository)
-    public personaRepository : PersonaRepository,
+    public personaRepository: PersonaRepository,
     @service(AutenticacionService)
-    public servicioAutenticacion : AutenticacionService,
-  ) {}
+    public servicioAutenticacion: AutenticacionService,
+  ) { }
 
-  @post("/identificarPersona",{
-    responses:{
-      '200':{
-        description:"identificacion de usuarios"
+  @post("/identificarPersona", {
+    responses: {
+      '200': {
+        description: "identificacion de usuarios"
       }
     }
   })
   async identificarPersona(
     @requestBody() credenciales: Credenciales
-  ){
-    let p = await this.servicioAutenticacion.IdentificarPersona(credenciales.usuario,credenciales.clave);
-    if(p){
+  ) {
+    let p = await this.servicioAutenticacion.IdentificarPersona(credenciales.usuario, credenciales.clave);
+    if (p) {
       let token = this.servicioAutenticacion.GenerarTokenJWT(p);
       return {
-        datos:{
+        datos: {
           nombre: p.nombres,
           correo: p.correo,
           id: p.id
         },
         tk: token
       }
-    }else{
-      throw new HttpErrors[401]("Los datos ongresados son invalidos");
+    } else {
+      throw new HttpErrors[401]("Los datos ingresados son invalidos");
     }
   }
 
@@ -85,19 +79,19 @@ export class PersonaController {
     persona.clave = claveCifrada;
 
 
-    let p= await this.personaRepository.create(persona);
+    let p = await this.personaRepository.create(persona);
 
-    //notificacion ususario
+    //notificacion usuario
 
     let destino = persona.correo;
     let asunto = "Registro en la app geekvolutionshop";
     let contenido = `Hola, ${persona.nombres}, su usuario para el acceso a la app es:${persona.correo} y su contraseña es: ${clave}`;
 
     fetch(`${Llaves.urlServicioNotificaciones}/notificacion-email?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
-    .then((data:any)=>{
-      console.log(data);
+      .then((data: any) => {
+        console.log(data);
 
-    });
+      });
 
     return p;
 
